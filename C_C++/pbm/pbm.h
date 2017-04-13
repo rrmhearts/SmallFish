@@ -21,11 +21,11 @@ class Pbm
 {
 public:
     Pbm(int width, int height);
-    Pbm(int width, int height, const char * type);
     Pbm(const char *filename);
     virtual ~Pbm() { if (m_pixels!=NULL) delete[] m_pixels; }
 
     bool save(const char *filename);
+	bool save(const char *filename, const char * type);
 
     // In pixels
     int height() { return m_height; }
@@ -38,6 +38,11 @@ public:
     int row(int y, uint8_t *buffer, int len);
     // set a whole row of bytes
     int setRow(int y, uint8_t *data, int len);
+
+	// internally used. 
+	void ascii2hex(uint8_t * byte_arr, char * ascii_arr);
+	void hex2ascii(char * ascii_arr, char * byte_arr, int length_byte_arr);
+
 
 private:
     int m_height;

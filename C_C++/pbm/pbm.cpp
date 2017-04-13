@@ -26,12 +26,40 @@
   (byte & 0x02 ? '1' : '0'), \
   (byte & 0x01 ? '1' : '0') 
 
-void ascii2hex(uint8_t * byte_arr, char * ascii_arr)
-{
+const char binary[16][5] = { "0000", "0001", "0010", "0011",
+"0100", "0101", "0110", "0111",
+"1000", "1001", "1010", "1011",
+"1100", "1101", "1110", "1111"
+};
 
-	int remainder_bytes = strlen(ascii_arr) % (sizeof(unsigned long)*8);
+void Pbm::hex2ascii(char * ascii_arr, char * byte_arr, int length_byte_arr)
+{
+	std::cout << "len: " << length_byte_arr << std::endl;
+	char nextAsciiByte[9] = "";
+	for (int i = 0; i < length_byte_arr; i++)
+	{
+		nextAsciiByte[0] = '\0';
+		//std::cout << binary[byte_arr[i]] << "     " << (int) byte_arr[i] << std::endl;
+		strcat(nextAsciiByte, binary[(byte_arr[i] >> 4) & 0xF]);
+		strcat(nextAsciiByte, binary[ byte_arr[i]       & 0xF]);
+
+		memcpy(ascii_arr, nextAsciiByte, 8 );
+		ascii_arr += 8;
+	}
+}
+
+void Pbm::ascii2hex(uint8_t * byte_arr, char * ascii_arr)
+{
+	/* Internally used. Just ascii 1s & 0s. to hex. no outside characters allowed!
+	  Expects large amounts of data in multiples of 8.
+
+		Ex. len("01011010") =8  ---->  0x5A (1 byte)
+	*/
+
+	int remainder_bits = strlen(ascii_arr) % (sizeof(unsigned long)*8);
 	int num_long_bytes = strlen(ascii_arr) / (sizeof(unsigned long) *8);
 	//char * endPtr = ascii_arr;
+
 	unsigned long bits;
 	char substring[sizeof(unsigned long)*8+1];
 
@@ -40,6 +68,7 @@ void ascii2hex(uint8_t * byte_arr, char * ascii_arr)
 		strncpy_s(substring, ascii_arr, sizeof(unsigned long) * 8);
 		substring[sizeof(unsigned long)*8] = '\0';
 
+		std::cout << "subs: " << substring << std::endl;
 		std::bitset<32> xbits(substring);
 		bits = xbits.to_ulong();
 
@@ -52,14 +81,26 @@ void ascii2hex(uint8_t * byte_arr, char * ascii_arr)
 		byte_arr += sizeof(unsigned long);
 		ascii_arr += sizeof(unsigned long) * 8;
 	}
-
-	strncpy_s(substring, ascii_arr, remainder_bytes);
-	substring[remainder_bytes] = '\0';
-	std::bitset<32> xbits(substring);
-	bits = xbits.to_ulong();
-	for (int i = 0; i < remainder_bytes; i++)
+	if (remainder_bits > 0)
 	{
-		byte_arr[i] = bits >> (sizeof(unsigned long) - i - 1) * 8 & 0xff;
+		strncpy_s(substring, ascii_arr, remainder_bits);
+		substring[remainder_bits] = '\0';
+		std::bitset<32> xbits(substring);
+		std::cout << "xbits: " << xbits << std::endl;
+		std::cout << "remainder_bits: " << remainder_bits << std::endl;
+		std::cout << "shifting: " << (sizeof(unsigned long)*8 - remainder_bits) << std::endl;
+		xbits <<= (sizeof(unsigned long)*8 - remainder_bits);
+		std::cout << "xbits: " << xbits << std::endl;
+		bits = xbits.to_ulong();
+		std::cout << "xbits long: " << bits << std::endl;
+		for (int i = 0; i < remainder_bits/8; i++)
+		{
+			//std::cout << (bits >> (sizeof(unsigned long)  - i -1)*8) << std::endl;
+			byte_arr[i] = bits >> ((sizeof(unsigned long) - i - 1 ) * 8) & 0xff;
+			printf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(byte_arr[i]));
+
+		}
+		printf("\n");
 	}
 }
 Pbm::Pbm(int width, int height)
@@ -73,10 +114,6 @@ Pbm::Pbm(int width, int height)
     m_pixels = new uint8_t[m_pixelsArrSize];
     memset(m_pixels, 0, m_pixelsArrSize);
 
-}
-
-Pbm::Pbm(int width, int height, const char* type)
-{
 }
 
 Pbm::Pbm(const char* filename)
@@ -126,6 +163,7 @@ Pbm::Pbm(const char* filename)
 			std::string ascii_data((std::istreambuf_iterator<char>(file)), 
 				std::istreambuf_iterator<char>());
 
+			ascii_data.erase(std::remove(ascii_data.begin(), ascii_data.end(), '\r'), ascii_data.end());
 			ascii_data.erase(std::remove(ascii_data.begin(), ascii_data.end(), '\n'), ascii_data.end());
 
 			std::cout << "data length: " << ascii_data.length() << std::endl;
@@ -138,7 +176,10 @@ Pbm::Pbm(const char* filename)
 				ascii2hex(ppixels, ascii_row);
 				ppixels += m_width/8;
 				// Set to m_pixels
-			}			
+			}		
+
+			// Testing
+			std::cout << "\n\tImage\n" << std::endl;
 			for (int i = 0; i < m_height; i++)
 			{
 				for (int j = 0; j < m_width / 8; j++)
@@ -147,21 +188,50 @@ Pbm::Pbm(const char* filename)
 				}
 				std::cout << std::endl;
 			}
-			for (int i = 122880; i < 122880; i++)
-			{
-				printf("pix @ (%d,%d): %d ",i%384,i/384, pixel(i % 384, i/384));
 
-				if (i % 8 == 0)
-				{
-					printf("pixels %d: %d\n", i/8, m_pixels[i/8]);
-				}
-				else
-					printf("\n");
+        } // end ascii
+        else if (magic_number == MAGIC_NUMBER){
+			file >> m_width;
+			file >> m_height;
+			printf("width: %d\n", m_width);
+			printf("height: %d\n", m_height);
+
+			if (m_width == 384)
+			{
+				printf("Width is correct\n");
+				m_imageSize = m_width * m_height;
+			}
+			else if (m_width % 8 == 0)
+			{
+				printf("Width is acceptable, divisible by 8: %d\n", m_width);
+				m_imageSize = m_width * m_height;
+			}
+			else
+			{
+				std::cerr << "Invalid pbm header " << std::endl;
+				m_height = 0;
+				m_width = 0;
+				m_imageSize = 0;
 			}
 
-        }
-        else if (magic_number == MAGIC_NUMBER){
+			// Read bitmap data
+			m_pixelsArrSize = m_imageSize / 8;
+			m_pixels = new uint8_t[m_pixelsArrSize];
 
+			if (file.peek() == '\n')
+				file.get(); // printf("got the turd");
+			file.read((char*)m_pixels, m_pixelsArrSize);
+
+			// Testing
+			std::cout << "\n\tImage\n" << std::endl;
+			for (int i = 0; i < m_height; i++)
+			{
+				for (int j = 0; j < m_width / 8; j++)
+				{
+					std::cout << (m_pixels[i*(m_width / 8) + j] > 0);
+				}
+				std::cout << std::endl;
+			}
         }
         else
         {
@@ -184,9 +254,70 @@ Pbm::Pbm(const char* filename)
 
 bool Pbm::save(const char* filename)
 {
+	/*
+		Saving in P4 pbm format is default
+	*/
+	std::ofstream file;
+	file.open(filename, std::ios::binary);
+
+	if (file.is_open())
+	{
+		file << "P4" << std::endl;
+		file << m_width << " " << m_height << std::endl;
+		file.write((char *)m_pixels, m_pixelsArrSize);
+		file.close();
+	}
+	else {
+		return false;
+	}
 	return true;
 }
+bool Pbm::save(const char *filename, const char * type)
+{
+	uint16_t magic_number = UNK_MAGIC_NUMBER;
 
+	memcpy(&magic_number, type, 2);
+
+	// Make sure is a ascii pbm file
+	if (magic_number == PLAIN_MAGIC_NUMBER || std::string("ascii").compare(type)==0 
+										   || std::string("plain").compare(type) == 0)
+	{
+		std::cout << "Plain" << std::endl;
+
+		std::ofstream file;
+		file.open(filename);
+		
+		if (file.is_open())
+		{
+			char * out_data = new char[m_width*m_height + 1];
+
+			file << "P1" << std::endl;
+			file << m_width << " " << m_height << std::endl;
+			hex2ascii(out_data, (char*)m_pixels, m_pixelsArrSize);
+			out_data[m_width*m_height] = '\0';
+			file.write(out_data, m_width*m_height);
+
+			file.close();
+			delete[] out_data;
+
+		}
+		else {
+			return false;
+		}
+	}
+	else if (magic_number == MAGIC_NUMBER || std::string("binary").compare(type) == 0
+										  || std::string("hex").compare(type) == 0)
+	{
+		std::cout << "binary" << std::endl;
+		return save(filename);
+
+	}
+	else
+	{
+		std::cerr << "Not a valid pbm filetype" << std::endl;
+	}
+	return true;
+}
 value Pbm::pixel(int x, int y)
 {
 	int ret_value = -1;
@@ -203,7 +334,18 @@ value Pbm::pixel(int x, int y)
 
 void Pbm::setPixel(int x, int y, value bw)
 {
+	if (x >= 0 && y >= 0 && x < m_width && y < m_height)
+	{
+		int byte_index = (y*m_width + x) / 8;
+		int bit_index = x % 8;
 
+		std::cout << "bindex: " << "( " << byte_index << ", " << bit_index << " )" << std::endl;
+		m_pixels[byte_index]  |= (bw << (7 - bit_index));
+		//m_pixels[0] = 0x80;
+		printf("%x\n", m_pixels[byte_index]);
+	}
+	else
+		std::cerr << "Pixel out of bounds\n" << std::endl;
 }
 
 int Pbm::row(int y, uint8_t* buffer, int len)
