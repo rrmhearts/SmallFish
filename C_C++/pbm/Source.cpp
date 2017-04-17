@@ -245,8 +245,26 @@ int main(int argc, char* argv[])
 	}*/
 	//pbm2hex();
 
-	Pbm("ache_letter_pbm.pbm");
+	Pbm obj = Pbm("bob.pbm");
+	//Pbm obj = Pbm("ache_letter_pbm.pbm");
+	// Pbm("remainder_pbm_b.pbm");
+	obj.setPixel(0, 0, 0);
+	//char * buffer = new char[1000];
+	/*uint8_t buffer[1000];
+	for (int i = 0; i < obj.height(); i++)
+	{
+		obj.row(i, buffer, 1000);
 
+		for (int x = 0; x < obj.width()/8; x++)
+		{
+			printf("%x", buffer[x]);
+		}
+		printf("\n");
+
+	}*/
+	obj.setPixel(1, 1, 0);
+	obj.save("bob.pbm", "ascii");
+	//obj.save("bob2.pbm", );
 	//setupGraphicFont(scale_x, scale_y);
 	getchar();
 
