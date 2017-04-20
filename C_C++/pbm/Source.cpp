@@ -56,17 +56,18 @@ void pbm2hex()
 	char line_buffer[256];
 	//printf("line  %s\n", line);
 	int i = 0;
-	int len = 75;
+	int len = 90;
 	hex[127] = '\0';
 	
 	FILE * input_pbm;
-	fopen_s(&input_pbm, "ache_letter_pbm.pbm", "r"); // Read expanded data to trasit to hex
+	//fopen_s(&input_pbm, "ache_letter_pbm.pbm", "r"); // Read expanded data to trasit to hex
+	fopen_s(&input_pbm, "narrow_gap_Hs_less_spacing.pbm", "r"); // Read expanded data to trasit to hex
 	FILE * output_hex;
-	fopen_s(&output_hex, "ache.hex", "w"); // hex version of binary expanded data
-
+	fopen_s(&output_hex, "littleache.hex", "w"); // hex version of binary expanded data
+	printf("Opened files...");
 	fgets(line, len, input_pbm);
 	fgets(line, len, input_pbm); 
-	//printf("len: %u", (unsigned)strlen(line));
+	printf("len: %u", (unsigned)strlen(line));
 	char * pline = NULL;
 	while (fgets(line, len, input_pbm) != NULL) {
 		char substring[5];
@@ -245,10 +246,16 @@ int main(int argc, char* argv[])
 	}*/
 	//pbm2hex();
 
-	Pbm obj = Pbm("bob.pbm");
+	//Pbm obj = Pbm("bob.pbm");
 	//Pbm obj = Pbm("ache_letter_pbm.pbm");
+	Pbm obj = Pbm("ache_letter_pbm_300x250_raw.pbm");
+	obj.print();
+	getchar();
+
+	obj.pad(384);
+	obj.print();
 	// Pbm("remainder_pbm_b.pbm");
-	obj.setPixel(0, 0, 0);
+	//obj.setPixel(0, 0, 0);
 	//char * buffer = new char[1000];
 	/*uint8_t buffer[1000];
 	for (int i = 0; i < obj.height(); i++)
@@ -262,10 +269,12 @@ int main(int argc, char* argv[])
 		printf("\n");
 
 	}*/
-	obj.setPixel(1, 1, 0);
-	obj.save("bob.pbm", "ascii");
+	//obj.setPixel(1, 1, 0);
+	//obj.save("bob.pbm", "ascii");
 	//obj.save("bob2.pbm", );
 	//setupGraphicFont(scale_x, scale_y);
+	getchar();
+	getchar();
 	getchar();
 
 	return 0;

@@ -33,6 +33,7 @@ class Pbm
         bool save(const char *filename, const char * type);
 
         uint8_t * data();
+        uint8_t * dataHflip();
         bool pad(const int new_width);
 
         // In pixels
@@ -43,6 +44,10 @@ class Pbm
         int width()
         {
             return m_width;
+        }
+        int bitArraySize()
+        {
+            return m_pixelsArrSize;
         }
 
         value pixel(int x, int y);
@@ -56,7 +61,7 @@ class Pbm
         // internally used.
         void ascii2hex(uint8_t * byte_arr, char * ascii_arr);
         void hex2ascii(char * ascii_arr, char * byte_arr, int length_byte_arr);
-		void print();
+        void print();
 
     private:
         int m_height;
