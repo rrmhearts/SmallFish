@@ -56,6 +56,7 @@ class Pbm
         // internally used.
         void ascii2hex(uint8_t * byte_arr, char * ascii_arr);
         void hex2ascii(char * ascii_arr, char * byte_arr, int length_byte_arr);
+		void print();
 
     private:
         int m_height;
